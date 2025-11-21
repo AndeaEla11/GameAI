@@ -11,19 +11,22 @@ public class Player : MonoBehaviour
     [HideInInspector]
     public int health = 100;
     public Text PlayerHPText;
+   
+    private new Rigidbody rigidbody; 
 
-
-    private CharacterController controller; 
-
+    public GameObject bulletPrefab;
+    public Transform firePoint;
+    public float bulletSpeed = 20f; 
     
     void Start()
     {
-        controller = GetComponent<CharacterController>();
+        rigidbody = GetComponent<Rigidbody>();
+        UpdateHPUI();
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        
+
         var x = Input.GetAxisRaw("Horizontal");
         var z = Input.GetAxisRaw("Vertical");
 
@@ -34,10 +37,42 @@ public class Player : MonoBehaviour
             direction = direction.normalized;
 
 
-        controller.Move(direction * speed * Time.deltaTime);
+        Vector3 currentPosition = rigidbody.position;
+        Vector3 newPosition = rigidbody.position;
 
+        newPosition = currentPosition + direction * speed * Time.deltaTime;
+
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            transform.rotation = targetRotation;
+        }
+
+        rigidbody.MovePosition(newPosition);
 
     }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Shoot();
+        }
+
+    }
+    void Shoot()
+    {
+
+
+        GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+        Rigidbody bulletRb = bullet.GetComponent<Rigidbody>();
+
+        if (bulletRb != null)
+        {
+            bulletRb.linearVelocity = firePoint.forward * bulletSpeed;
+        }
+    }
+    
 
     public void TakeDamege(int damage)
     {
