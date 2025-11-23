@@ -20,6 +20,12 @@ public class npcABFSController : MonoBehaviour
 
     }
 
+    private void Start()
+    {
+        Node startNode = grid.WorldToNode(transform.position);
+        grid.SetOccupied(startNode, true);
+    }
+
     private void Update()
     {
         if (grid == null || target ==  null)
@@ -39,14 +45,25 @@ public class npcABFSController : MonoBehaviour
         if (path == null || idx >= path.Count)
             return; 
 
+        Node currentNode = grid.WorldToNode(transform.position);
         Vector3 goal = path[idx];
+        Node nextNode = grid.WorldToNode(goal);
+
+        if (grid.IsOccupied(nextNode) && nextNode != currentNode)
+        {
+            return;
+        }
+
         Vector3 to = goal - transform.position;
-        to.y = 0f; 
+        to.y = 0f;
 
         if (to.magnitude < 0.1f)
         {
+            grid.SetOccupied(nextNode, false);
+            grid.SetOccupied(nextNode, true);
+
             idx++;
-            return; 
+            return;
         }
 
         Vector3 step = to.normalized * moveSpeed * Time.fixedDeltaTime;

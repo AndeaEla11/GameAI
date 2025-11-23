@@ -40,7 +40,7 @@ public class Player : MonoBehaviour
         Vector3 currentPosition = rigidbody.position;
         Vector3 newPosition = rigidbody.position;
 
-        newPosition = currentPosition + direction * speed * Time.deltaTime;
+        newPosition = currentPosition + direction * speed * Time.deltaTime; 
 
         if (direction != Vector3.zero)
         {
@@ -79,7 +79,7 @@ public class Player : MonoBehaviour
         health -= damage;
 
         UpdateHPUI(); 
-
+                                                 
         if (health <= 0)
             PlayerDied();
 

@@ -10,6 +10,7 @@ public class GridManager : MonoBehaviour
     public LayerMask obstacleMask;
 
     public Node[,] grid;
+    public bool[,] occupied; 
 
     private void Awake()
     {
@@ -19,6 +20,7 @@ public class GridManager : MonoBehaviour
     void CreateGrid()
     {
         grid = new Node[gridWidth, gridHeight];
+        occupied = new bool[gridWidth, gridHeight];
 
         for (int x = 0; x < gridWidth; x++)
         for (int z = 0; z < gridHeight; z++)
@@ -40,6 +42,16 @@ public class GridManager : MonoBehaviour
         int z = Mathf.Clamp(Mathf.FloorToInt(gridHeight * pz), 0, gridHeight - 1);
         return grid[x,z];
 
+    }
+
+    public bool IsOccupied(Node n)
+    {
+        return occupied[n.x, n.z]; 
+    }
+
+    public void SetOccupied(Node n, bool value)
+    {
+        occupied[n.x, n.z] = value;
     }
 
     public IEnumerable<Node> GetNeighbours(Node n)
