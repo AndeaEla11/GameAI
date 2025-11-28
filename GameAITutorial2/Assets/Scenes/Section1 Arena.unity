@@ -268,6 +268,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 477871516}
+  - {fileID: 853483443}
   - {fileID: 599894154}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -287,11 +288,15 @@ MonoBehaviour:
   target: {fileID: 8291569595583271674}
   moveSpeed: 3
   repathEvery: 0.5
-  attackRange: 1
-  damagePerHit: 5
-  attackCooldown: 0.7
+  detectionRange: 10
   state: 0
   stateText: {fileID: 1463611157}
+  stopDistance: 5
+  bulletPrefab: {fileID: 1712034676293847295, guid: 474692757b51b6c4c9c401077fda6849, type: 3}
+  firePoint: {fileID: 853483443}
+  bulletSpeed: 16
+  shootRange: 8
+  shootCooldown: 0.6
 --- !u!114 &212235381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1808,6 +1813,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &853483442
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 853483443}
+  m_Layer: 3
+  m_Name: 'FirePoint '
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &853483443
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 853483442}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.2, z: 1.06}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 212235379}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &867243792
 GameObject:

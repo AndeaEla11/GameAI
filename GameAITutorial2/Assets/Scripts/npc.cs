@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class npcA : MonoBehaviour
+public class npc : MonoBehaviour
 {
     public int maxHealth = 100;
     public int health;

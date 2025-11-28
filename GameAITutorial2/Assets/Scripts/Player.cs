@@ -40,7 +40,7 @@ public class Player : MonoBehaviour
         Vector3 currentPosition = rigidbody.position;
         Vector3 newPosition = rigidbody.position;
 
-        newPosition = currentPosition + direction * speed * Time.deltaTime; 
+        newPosition = currentPosition + direction * speed * Time.fixedDeltaTime;
 
         if (direction != Vector3.zero)
         {
@@ -76,13 +76,10 @@ public class Player : MonoBehaviour
 
     public void TakeDamege(int damage)
     {
-        health -= damage;
-
-        UpdateHPUI(); 
-                                                 
-        if (health <= 0)
+        health = Mathf.Max(0, health - damage);
+        UpdateHPUI();
+        if (health == 0) 
             PlayerDied();
-
 
     }
 

@@ -15,15 +15,18 @@ public class npcABFSController : MonoBehaviour
     int idx;
     float timer;
 
-    public float attackRange = 1.0f;
-    public int damagePerHit = 5;
-    public float attackCooldown = 0.7f;
-    float attackTimer;
-
     public float detectionRange = 10f;
     public enum State { Patrol, Chase, Attack}
     public State state = State.Patrol;
     public Text stateText;
+
+    public float stopDistance = 5f;
+    public GameObject bulletPrefab;   
+    public Transform firePoint;       
+    public float bulletSpeed = 16f;
+    public float shootRange = 8f; 
+    public float shootCooldown = 0.6f;
+    float shootTimer = 0f;
 
     private void Awake()
     {
@@ -69,18 +72,39 @@ public class npcABFSController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        shootTimer -= Time.fixedDeltaTime;
 
-        attackTimer -= Time.fixedDeltaTime;
-        Vector3 toPlayer = target.position - transform.position;
-        toPlayer.y = 0f;
-        if (toPlayer.magnitude <= attackRange && attackTimer <= 0f)
+        if (target)
         {
-            SetState(State.Attack);
-            var player = target.GetComponent<Player>();
-            if (player != null)
+            Vector3 toPlayerMove = target.position - transform.position;
+            toPlayerMove.y = 0f;
+
+            if (toPlayerMove.magnitude <= stopDistance && shootTimer <= 0f)
             {
-                player.TakeDamege(damagePerHit);
-                attackTimer = attackCooldown;
+                SetState(State.Attack);
+
+
+                if (toPlayerMove.sqrMagnitude > 0.0001f)
+                {
+                    float yaw = Quaternion.LookRotation(toPlayerMove).eulerAngles.y;
+                    transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                }
+
+                if (bulletPrefab && firePoint)
+                {
+                    GameObject b = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+                    
+                    var brb = b.GetComponent<Rigidbody>();
+                    if (brb)
+                    {
+                        Vector3 dir = toPlayerMove.normalized;
+                        brb.linearVelocity = (toPlayerMove.normalized) * bulletSpeed;
+                    }
+                }
+
+                shootTimer = shootCooldown;
+                return;
+
             }
         }
 

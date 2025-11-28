@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    public int damage = 10; 
+    public int damage = 10;
+    bool hasHit = false;
 
     void Start()
     {
@@ -11,16 +12,29 @@ public class Bullet : MonoBehaviour
 
     void OnCollisionEnter(Collision other)
     {
+        if (hasHit) return;
+        hasHit = true;
 
-        var hpA = other.collider.GetComponentInParent<npcA>();
-        if (hpA != null )
+        //player
+        var player = other.collider.GetComponentInParent<Player>();
+        if (player != null)
         {
-            hpA.TakeDamage( damage );
+            player.TakeDamege(damage);
             Destroy(gameObject);
             return;
         }
 
+        //npcA and npcB
+        var hp = other.collider.GetComponentInParent<npc>();
+        if (hp != null)
+        {
+            hp.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
+        }
 
         Destroy(gameObject);
+
+
     }
 }
