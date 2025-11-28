@@ -1,8 +1,7 @@
 using UnityEngine.UI; 
 using UnityEngine;
 using UnityEngine.AI;
-using System;
-using static npcB;
+
 
 public class npcB : MonoBehaviour
 {
@@ -52,7 +51,7 @@ public class npcB : MonoBehaviour
         if (!inRange)
         {
             state = npcBState.Patrol;
-            agent.isStopped = true;
+            PatrolTick();
             UpdateStateUI();
             return;
         }
@@ -102,6 +101,38 @@ public class npcB : MonoBehaviour
             return false;
 
         return true;
+    }
+
+
+    void OnEnable()
+    {
+        wpIndex = 0;
+        if (useWaypoints && waypoints != null && waypoints.Length > 0)
+            agent.SetDestination(waypoints[wpIndex].position);
+    }
+
+
+    void PatrolTick()
+    {
+        if (!useWaypoints || waypoints == null || waypoints.Length == 0)
+        {
+            agent.isStopped = true;
+            return;
+        }
+
+        agent.isStopped = false;
+
+        
+        if (!agent.hasPath)
+            agent.SetDestination(waypoints[wpIndex].position);
+
+        
+        if (!agent.pathPending &&
+            agent.remainingDistance <= Mathf.Max(waypointTolerance, agent.stoppingDistance))
+        {
+            wpIndex = (wpIndex + 1) % waypoints.Length;
+            agent.SetDestination(waypoints[wpIndex].position);
+        }
     }
 
 }

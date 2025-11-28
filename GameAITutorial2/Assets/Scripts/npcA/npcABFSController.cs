@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections.Generic;
 
 
@@ -14,16 +15,26 @@ public class npcABFSController : MonoBehaviour
     int idx;
     float timer;
 
+    public float attackRange = 1.0f;
+    public int damagePerHit = 5;
+    public float attackCooldown = 0.7f;
+    float attackTimer;
+
+    public float detectionRange = 10f;
+    public enum State { Patrol, Chase, Attack}
+    public State state = State.Patrol;
+    public Text stateText;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-
     }
 
     private void Start()
     {
-        Node startNode = grid.WorldToNode(transform.position);
+        var startNode = grid.WorldToNode(transform.position);
         grid.SetOccupied(startNode, true);
+        SetState(State.Patrol);
     }
 
     private void Update()
@@ -31,19 +42,54 @@ public class npcABFSController : MonoBehaviour
         if (grid == null || target ==  null)
             return;
 
-        timer -= Time.deltaTime; ;
+        timer -= Time.deltaTime;
+
         if (timer < 0f)
         {
             path = BFSPath(grid, transform.position, target.position);
             idx = 0;
             timer = repathEvery;
+
+            if 
+                (path != null && path.Count > 0) 
+                SetState(State.Chase);
+
+            else 
+                SetState(State.Patrol);
+        }
+
+        float dist = Vector3.Distance(transform.position, target.position);
+        if (dist > detectionRange)
+        {
+            path = null;
+            SetState(State.Patrol);
+            return;
         }
     }
 
     private void FixedUpdate()
     {
+
+        attackTimer -= Time.fixedDeltaTime;
+        Vector3 toPlayer = target.position - transform.position;
+        toPlayer.y = 0f;
+        if (toPlayer.magnitude <= attackRange && attackTimer <= 0f)
+        {
+            SetState(State.Attack);
+            var player = target.GetComponent<Player>();
+            if (player != null)
+            {
+                player.TakeDamege(damagePerHit);
+                attackTimer = attackCooldown;
+            }
+        }
+
         if (path == null || idx >= path.Count)
-            return; 
+        {
+            SetState(State.Patrol);
+            return;
+        }
+
 
         Node currentNode = grid.WorldToNode(transform.position);
         Vector3 goal = path[idx];
@@ -51,6 +97,7 @@ public class npcABFSController : MonoBehaviour
 
         if (grid.IsOccupied(nextNode) && nextNode != currentNode)
         {
+            timer = 0f;
             return;
         }
 
@@ -59,7 +106,7 @@ public class npcABFSController : MonoBehaviour
 
         if (to.magnitude < 0.1f)
         {
-            grid.SetOccupied(nextNode, false);
+            grid.SetOccupied(currentNode, false);
             grid.SetOccupied(nextNode, true);
 
             idx++;
@@ -69,11 +116,14 @@ public class npcABFSController : MonoBehaviour
         Vector3 step = to.normalized * moveSpeed * Time.fixedDeltaTime;
         rb.MovePosition(transform.position + step);
 
-        if (to != Vector3.zero)
-            transform.rotation = Quaternion.LookRotation(to);
+        if (to.sqrMagnitude > 0.0001f)
+        { 
+            float yaw = Quaternion.LookRotation(to).eulerAngles.y;
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        }
     }
 
-    List<Vector3> BFSPath (GridManager g, Vector3 startW, Vector3 targetW)
+        List<Vector3> BFSPath (GridManager g, Vector3 startW, Vector3 targetW)
     {
         Node start = g.WorldToNode(startW);
         Node goal = g.WorldToNode(targetW);
@@ -116,6 +166,13 @@ public class npcABFSController : MonoBehaviour
         }
         rev.Reverse();
         return rev;
+    }
+
+
+    void SetState(State s) 
+    { 
+        state = s; 
+        if (stateText) stateText.text = s.ToString().ToUpper(); 
     }
 
 }
