@@ -16,12 +16,17 @@ public class Player : MonoBehaviour
 
     public GameObject bulletPrefab;
     public Transform firePoint;
-    public float bulletSpeed = 20f; 
-    
+    public float bulletSpeed = 20f;
+
+    public int score = 0;
+    public Text scoreText;
+
     void Start()
     {
         rigidbody = GetComponent<Rigidbody>();
         UpdateHPUI();
+        if (scoreText != null)
+            scoreText.text = "Score: 12/ " + score;
     }
 
     void FixedUpdate()
@@ -72,7 +77,13 @@ public class Player : MonoBehaviour
             bulletRb.linearVelocity = firePoint.forward * bulletSpeed;
         }
     }
-    
+
+    public void AddScore(int amount)
+    {
+        score += amount;
+        if (scoreText != null)
+            scoreText.text = "Score: 12/" + score;
+    }
 
     public void TakeDamege(int damage)
     {
