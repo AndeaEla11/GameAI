@@ -1,12 +1,19 @@
 using UnityEngine;
+using UnityEngine.AI;
 using System.Collections.Generic;
 
 public class ArtifactSpawner : MonoBehaviour
 {
     public Transform terrain;
-    public Vector2 areaSize = new Vector2(100, 100);
+    public Vector2 areaSize = new Vector2(100, 300);
     public LayerMask groundMask;
 
+    public Transform player;
+    public float navSampleMaxDistance = 3f;
+    public ArtifactType[] artifacts = new ArtifactType[6];
+    public static readonly List<Transform> SpawnedArtifacts = new List<Transform>();
+
+    [System.Serializable]
     public class ArtifactType
     {
         public string name = "Coin";
@@ -19,8 +26,6 @@ public class ArtifactSpawner : MonoBehaviour
         [Min(0f)] public float minSpacing = 3f;
     }
 
-    public ArtifactType[] artifacts = new ArtifactType[6];
-
     public int triesPerItem = 20;
 
     void Start()
@@ -30,6 +35,7 @@ public class ArtifactSpawner : MonoBehaviour
 
     void SpawnAll()
     {
+        SpawnedArtifacts.Clear();
         var placedPoints = new List<Vector3>();
 
         foreach (var t in artifacts)
@@ -49,6 +55,7 @@ public class ArtifactSpawner : MonoBehaviour
 
     bool TryPlaceOne(ArtifactType t, List<Vector3> all)
     {
+
         float rx = Random.Range(0f, areaSize.x);
         float rz = Random.Range(0f, areaSize.y);
 
@@ -70,12 +77,29 @@ public class ArtifactSpawner : MonoBehaviour
                 return false;
         }
 
+        if (player == null) return false;
+
+        
+        if (!NavMesh.SamplePosition(player.position, out NavMeshHit startNM, navSampleMaxDistance, NavMesh.AllAreas))
+            return false;
+        if (!NavMesh.SamplePosition(hit.point, out NavMeshHit goalNM, navSampleMaxDistance, NavMesh.AllAreas))
+            return false;
+
+       
+        var path = new NavMeshPath();
+        bool ok = NavMesh.CalculatePath(startNM.position, goalNM.position, NavMesh.AllAreas, path);
+
+        
+        if (!(ok && path.status == NavMeshPathStatus.PathComplete))
+            return false;
+
         var go = Instantiate(t.prefab, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal), transform);
 
         var col = go.GetComponent<Collider>();
         if (col != null) col.isTrigger = false;
 
         all.Add(hit.point);
+        ArtifactSpawner.SpawnedArtifacts.Add(go.transform);
         return true;
     }
 

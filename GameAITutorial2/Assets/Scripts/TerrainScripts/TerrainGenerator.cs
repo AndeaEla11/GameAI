@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.AI.Navigation;
 
 public class TerrainGenerator : MonoBehaviour
 {
@@ -98,6 +99,11 @@ public class TerrainGenerator : MonoBehaviour
         mesh.RecalculateBounds();
 
         var col = GetComponent<MeshCollider>();
-        if (col) col.sharedMesh = mesh;
+        if (col) 
+            col.sharedMesh = mesh;
+
+        var surface = GetComponent<NavMeshSurface>();
+        if (surface) 
+            surface.BuildNavMesh();
     }
 }
