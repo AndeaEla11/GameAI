@@ -1,106 +1,132 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using System.Collections.Generic;
 
-public class ArtifactSpawner : MonoBehaviour
+public class ArtifactSpawnerSimple : MonoBehaviour
 {
     public Transform terrain;
-    public Vector2 areaSize = new Vector2(100, 100);
-    public LayerMask groundMask;
-
     public Transform player;
-    public float navSampleMaxDistance = 6f;
-    public ArtifactType[] artifacts = new ArtifactType[6];
-    public static readonly List<Transform> SpawnedArtifacts = new List<Transform>();
+    public LayerMask groundMask = ~0;
+    public Vector2 areaSize = new Vector2(100f, 100f);
 
-    [System.Serializable]
-    public class ArtifactType
-    {
-        public string name = "Coin";
-        public GameObject prefab;
-        [Min(0)] public int count = 3;
+    //NavMesh / debug
+    public float navSampleMaxDistance = 4f;
+    public bool showPaths = true;
+    public Material pathMaterial;
 
-        public float minHeight = -999f;
-        public float maxHeight = 999f;
-        [Range(0f, 70f)] public float maxSlope = 30f;
-        [Min(0f)] public float minSpacing = 3f;
-    }
+    public GameObject coinPrefab;
+    public GameObject healthPrefab;
+    public GameObject shieldPrefab;
+    public GameObject swordPrefab;
+    public GameObject lootPrefab;
+    public GameObject trapPrefab;
 
-    public int triesPerItem = 50;
+    public int coinCount = 3, healthCount = 3, shieldCount = 3,
+               swordCount = 3, lootCount = 3, trapCount = 3;
+
+    public float minHeight = 0f;
+    public float maxHeight = 999f;
+    [Range(0f, 70f)] public float maxSlope = 45f;
+    public float minSpacing = 2f;
+
+    readonly List<Vector3> placedPoints = new();
+    readonly List<LineRenderer> pathLines = new();
 
     void Start()
     {
+        //clear any old debug lines
+        for (int i = 0; i < pathLines.Count; i++)
+            if (pathLines[i] != null) Destroy(pathLines[i].gameObject);
+        pathLines.Clear();
+        placedPoints.Clear();
+
+        StartCoroutine(SpawnAfterNavmesh());
+    }
+
+    System.Collections.IEnumerator SpawnAfterNavmesh()
+    {
+        yield return null;
+        yield return null;
         SpawnAll();
     }
 
-    void SpawnAll()
+    void Update()
     {
-        SpawnedArtifacts.Clear();
-        var placedPoints = new List<Vector3>();
-
-        foreach (var t in artifacts)
+        if (Input.GetKeyDown(KeyCode.V))
         {
-            if (t == null || t.prefab == null) continue;
+            showPaths = !showPaths;
+            for (int i = 0; i < pathLines.Count; i++)
+                if (pathLines[i] != null) pathLines[i].enabled = showPaths;
+        }
+    }
 
-            int placed = 0;
-            int guard = t.count * triesPerItem;
+    public void SpawnAll()
+    {
+        GameObject[] prefabs = { coinPrefab, healthPrefab, shieldPrefab, swordPrefab, lootPrefab, trapPrefab };
+        int[] counts = { coinCount, healthCount, shieldCount, swordCount, lootCount, trapCount };
 
-            while (placed < t.count && guard-- > 0)
+        for (int i = 0; i < prefabs.Length; i++)
+        {
+            if (prefabs[i] == null || counts[i] <= 0) continue;
+
+            for (int n = 0; n < counts[i]; n++)
             {
-                if (TryPlaceOne(t, placedPoints))
-                    placed++;
+                int safety = 60;
+                while (safety-- > 0 && !TryPlaceOne(prefabs[i])) { }
             }
         }
     }
 
-    bool TryPlaceOne(ArtifactType t, List<Vector3> all)
+    bool TryPlaceOne(GameObject prefab)
     {
-
-        float rx = Random.Range(0f, areaSize.x);
-        float rz = Random.Range(0f, areaSize.y);
-
-        Vector3 top = terrain.TransformPoint(new Vector3(rx, 200f, rz));
-        if (!Physics.Raycast(top, Vector3.down, out RaycastHit hit, 400f, groundMask))
+        float x = Random.Range(0f, areaSize.x);
+        float z = Random.Range(0f, areaSize.y);
+        Vector3 rayStart = terrain ? terrain.TransformPoint(new Vector3(x, 200f, z))
+                                   : new Vector3(x, 200f, z);
+        if (!Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, 400f, groundMask))
             return false;
 
+        if (hit.point.y < minHeight || hit.point.y > maxHeight) return false;
         float slope = Vector3.Angle(hit.normal, Vector3.up);
-        if (slope > t.maxSlope) return false;
+        if (slope > maxSlope) return false;
 
-        if (hit.point.y < t.minHeight || hit.point.y > t.maxHeight)
-            return false;
-
-        foreach (var p in all)
+        for (int i = 0; i < placedPoints.Count; i++)
         {
-            Vector2 a = new Vector2(p.x, p.z);
-            Vector2 b = new Vector2(hit.point.x, hit.point.z);
-            if ((a - b).sqrMagnitude < t.minSpacing * t.minSpacing)
-                return false;
+            Vector2 a = new(placedPoints[i].x, placedPoints[i].z);
+            Vector2 b = new(hit.point.x, hit.point.z);
+            if ((a - b).sqrMagnitude < minSpacing * minSpacing) return false;
         }
 
         if (player == null) return false;
+        if (!NavMesh.SamplePosition(player.position, out NavMeshHit nmStart, navSampleMaxDistance, NavMesh.AllAreas)) return false;
+        if (!NavMesh.SamplePosition(hit.point, out NavMeshHit nmGoal, navSampleMaxDistance, NavMesh.AllAreas)) return false;
 
-        
-        if (!NavMesh.SamplePosition(player.position, out NavMeshHit startNM, navSampleMaxDistance, NavMesh.AllAreas))
-            return false;
-        if (!NavMesh.SamplePosition(hit.point, out NavMeshHit goalNM, navSampleMaxDistance, NavMesh.AllAreas))
-            return false;
-
-       
         var path = new NavMeshPath();
-        bool ok = NavMesh.CalculatePath(startNM.position, goalNM.position, NavMesh.AllAreas, path);
+        if (!NavMesh.CalculatePath(nmStart.position, nmGoal.position, NavMesh.AllAreas, path)) return false;
+        if (path.status != NavMeshPathStatus.PathComplete) return false;
 
-        
-        if (!(ok && path.status == NavMeshPathStatus.PathComplete))
-            return false;
+        Quaternion align = Quaternion.FromToRotation(Vector3.up, hit.normal);
+        Instantiate(prefab, hit.point, align);
+        if (showPaths) DrawPath(path);
 
-        var go = Instantiate(t.prefab, hit.point, Quaternion.FromToRotation(Vector3.up, hit.normal), transform);
-
-        var col = go.GetComponent<Collider>();
-        if (col != null) col.isTrigger = false;
-
-        all.Add(hit.point);
-        ArtifactSpawner.SpawnedArtifacts.Add(go.transform);
+        placedPoints.Add(hit.point);
         return true;
     }
 
+    void DrawPath(NavMeshPath path)
+    {
+        GameObject go = new("PathLine");
+        LineRenderer lr = go.AddComponent<LineRenderer>();
+
+        lr.useWorldSpace = true;
+        lr.positionCount = path.corners.Length;
+        lr.widthMultiplier = 0.08f;
+        lr.numCapVertices = 2;
+
+        if (pathMaterial != null) 
+            lr.material = pathMaterial;
+
+        lr.SetPositions(path.corners);
+        pathLines.Add(lr);
+    }
 }

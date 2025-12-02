@@ -44,30 +44,31 @@ public class TerrainGenerator : MonoBehaviour
                 i++;
             }
         }
-            //create triangles
-            triangles = new int[xSize * zSize * 6];
-            int vert = 0;
-            int tris = 0;
+        //create triangles
+        triangles = new int[xSize * zSize * 6];
+        int tris = 0;
+        int vert = 0;
+        int rowLength = xSize + 1;
 
-            for (int z = 0; z < zSize; z++)
+        for (int z = 0; z < zSize; z++)
+        {
+            for (int x = 0; x < xSize; x++, vert++)
             {
-                for(int x = 0; x < xSize; ++x)
-                {
-                    //triangle 1
-                    triangles[tris + 0] = vert + 0;
-                    triangles[tris + 1] = vert + xSize + 1;
-                    triangles[tris + 2] = vert + 2;
+                //triangle 1
+                triangles[tris + 0] = vert + 0;
+                triangles[tris + 1] = vert + rowLength;
+                triangles[tris + 2] = vert + 1;
 
-                    //triangle 2
-                    triangles[tris + 3] = vert + 0;
-                    triangles[tris + 4] = vert + xSize + 1;
-                    triangles[tris + 5] = vert + xSize + 2;
+                //triangle 2
+                triangles[tris + 3] = vert + 1;
+                triangles[tris + 4] = vert + rowLength;
+                triangles[tris + 5] = vert + rowLength + 1;
 
-                    vert++;
-                    tris += 6;
-                }
-                vert++; 
+                tris += 6;
             }
+
+            vert++;
+        }
     }
 
     void UpdateMesh()
