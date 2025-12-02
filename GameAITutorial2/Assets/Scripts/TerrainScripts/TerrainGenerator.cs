@@ -10,84 +10,64 @@ public class TerrainGenerator : MonoBehaviour
     public int xSize = 100;
     public int zSize = 100;
 
+    Color[] colours;
+    float minTerrainHeight = 0f; 
+    float maxTerrainHeight = 0f;
+
     public float scale = 0.05f;
     public float heightMultiplier = 8f;
-    public float offsetX = 0f;
-    public float offsetZ = 0f;
-
-    public int octaves = 4;
-    public float persistence = 0.5f;
 
     void Start()
     {
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
 
-        GenerateMesh();
+        maxTerrainHeight = heightMultiplier;
+        colours = new Color[(xSize + 1) * (zSize + 1)];
+
+        CreateShape();
         UpdateMesh();
     }
 
-    void OnValidate()
+    void CreateShape()
     {
-        xSize = Mathf.Max(1, xSize);
-        zSize = Mathf.Max(1, zSize);
-        if (Application.isPlaying && mesh != null)
+        vertices = new Vector3[((xSize +1) * (zSize +1))];
+        for (int i = 0, z = 0; z <= zSize; z++)
         {
-            GenerateMesh();
-            UpdateMesh();
-        }
-    }
-
-    void GenerateMesh()
-    {
-        vertices = new Vector3[(xSize + 1) * (zSize + 1)];
-        int i = 0;
-
-        for (int z = 0; z <= zSize; z++)
-        {
-            for (int x = 0; x <= xSize; x++)
+            for (int x = 0; x <= xSize; ++x)
             {
-                float amplitude = 1;
-                float frequency = 1;
-                float y = 0;
+                float y = Mathf.PerlinNoise(x * scale, z * scale) * heightMultiplier;
+                vertices[i] = new Vector3(x, y, z);
 
-                for (int o = 0; o < octaves; o++)
+                float normalizedHeight = Mathf.InverseLerp(minTerrainHeight, maxTerrainHeight, y);
+                colours[i] = Color.Lerp(Color.green, Color.gray, normalizedHeight);
+                i++;
+            }
+        }
+            //create triangles
+            triangles = new int[xSize * zSize * 6];
+            int vert = 0;
+            int tris = 0;
+
+            for (int z = 0; z < zSize; z++)
+            {
+                for(int x = 0; x < xSize; ++x)
                 {
-                    float perlinX = (x + offsetX) * scale * frequency;
-                    float perlinZ = (z + offsetZ) * scale * frequency;
+                    //triangle 1
+                    triangles[tris + 0] = vert + 0;
+                    triangles[tris + 1] = vert + xSize + 1;
+                    triangles[tris + 2] = vert + 2;
 
-                    y += Mathf.PerlinNoise(perlinX, perlinZ) * amplitude;
+                    //triangle 2
+                    triangles[tris + 3] = vert + 0;
+                    triangles[tris + 4] = vert + xSize + 1;
+                    triangles[tris + 5] = vert + xSize + 2;
 
-                    amplitude *= persistence;
-                    frequency *= 2f;
+                    vert++;
+                    tris += 6;
                 }
-
-                y *= heightMultiplier;
-
-                vertices[i++] = new Vector3(x, y, z);
+                vert++; 
             }
-        }
-
-        triangles = new int[xSize * zSize * 6];
-        int vert = 0;
-        int tris = 0;
-        for (int z = 0; z < zSize; z++)
-        {
-            for (int x = 0; x < xSize; x++)
-            {
-                triangles[tris + 0] = vert;
-                triangles[tris + 1] = vert + xSize + 1;
-                triangles[tris + 2] = vert + 1;
-
-                triangles[tris + 3] = vert + 1;
-                triangles[tris + 4] = vert + xSize + 1;
-                triangles[tris + 5] = vert + xSize + 2;
-
-                vert++;
-                tris += 6;
-            }
-            vert++;
-        }
     }
 
     void UpdateMesh()
@@ -95,15 +75,16 @@ public class TerrainGenerator : MonoBehaviour
         mesh.Clear();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        mesh.colors = colours; 
         mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
 
         var col = GetComponent<MeshCollider>();
-        if (col) 
+        if (col)
             col.sharedMesh = mesh;
 
+        //implement NavMeshSurface at run time
         var surface = GetComponent<NavMeshSurface>();
-        if (surface) 
+        if (surface)
             surface.BuildNavMesh();
     }
 }
