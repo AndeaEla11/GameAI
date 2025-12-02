@@ -9,8 +9,7 @@ public class ArtifactSpawnerSimple : MonoBehaviour
     public LayerMask groundMask = ~0;
     public Vector2 areaSize = new Vector2(100f, 100f);
 
-    //NavMesh / debug
-    public float navSampleMaxDistance = 4f;
+    public float navSampleMaxDistance = 8f;
     public bool showPaths = true;
     public Material pathMaterial;
 
@@ -40,13 +39,6 @@ public class ArtifactSpawnerSimple : MonoBehaviour
         pathLines.Clear();
         placedPoints.Clear();
 
-        StartCoroutine(SpawnAfterNavmesh());
-    }
-
-    System.Collections.IEnumerator SpawnAfterNavmesh()
-    {
-        yield return null;
-        yield return null;
         SpawnAll();
     }
 

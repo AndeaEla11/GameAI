@@ -27,7 +27,7 @@ public class GridManager : MonoBehaviour
         {
                 Vector3 p = origin + new Vector3(x * cellSize + cellSize * 0.5f, 0f, z * cellSize + cellSize * 0.5f);
 
-                bool walkabel = !Physics.CheckBox(p + Vector3.up * 0.5f, new Vector3(cellSize * 0.45f,0.6f, cellSize * 0.45f), Quaternion.identity, obstacleMask);
+                bool walkabel = !Physics.CheckBox(p + Vector3.up * 0.5f, new Vector3(cellSize * 0.5f, 0.5f, cellSize * 0.5f), Quaternion.identity, obstacleMask);
 
                 grid[x,z] = new Node(walkabel, p, x, z);
 
@@ -54,30 +54,38 @@ public class GridManager : MonoBehaviour
         occupied[n.x, n.z] = value;
     }
 
-    public IEnumerable<Node> GetNeighbours(Node n)
+    public List<Node> GetNeighbours(Node n)
     {
-        int x = n.x, z = n.z;
+        List<Node> neighbours = new List<Node>();
+
+        int x = n.x;
+        int z = n.z;
 
         bool left = x > 0 && grid[x - 1, z].walkable;
         bool right = x < gridWidth - 1 && grid[x + 1, z].walkable;
         bool down = z > 0 && grid[x, z - 1].walkable;
         bool up = z < gridHeight - 1 && grid[x, z + 1].walkable;
 
-        if (left) yield return grid[x - 1, z];
-        if (right) yield return grid[x + 1, z];
-        if (down) yield return grid[x, z - 1];
-        if (up) yield return grid[x, z + 1];
+        //4-direction neighbours
+        if (left) neighbours.Add(grid[x - 1, z]);
+        if (right) neighbours.Add(grid[x + 1, z]);
+        if (down) neighbours.Add(grid[x, z - 1]);
+        if (up) neighbours.Add(grid[x, z + 1]);
 
+        //corner cutting prevention
         if (x > 0 && z > 0 && left && down && grid[x - 1, z - 1].walkable)
-            yield return grid[x - 1, z - 1];
+            neighbours.Add(grid[x - 1, z - 1]);
+
         if (x > 0 && z < gridHeight - 1 && left && up && grid[x - 1, z + 1].walkable)
-            yield return grid[x - 1, z + 1];
+            neighbours.Add(grid[x - 1, z + 1]);
+
         if (x < gridWidth - 1 && z > 0 && right && down && grid[x + 1, z - 1].walkable)
-            yield return grid[x + 1, z - 1]; 
+            neighbours.Add(grid[x + 1, z - 1]);
+
         if (x < gridWidth - 1 && z < gridHeight - 1 && right && up && grid[x + 1, z + 1].walkable)
-            yield return grid[x + 1, z + 1];
+            neighbours.Add(grid[x + 1, z + 1]);
+
+        return neighbours;
     }
 
 }
-
-
