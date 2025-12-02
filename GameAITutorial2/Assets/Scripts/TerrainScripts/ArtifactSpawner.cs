@@ -5,11 +5,11 @@ using System.Collections.Generic;
 public class ArtifactSpawner : MonoBehaviour
 {
     public Transform terrain;
-    public Vector2 areaSize = new Vector2(100, 300);
+    public Vector2 areaSize = new Vector2(100, 100);
     public LayerMask groundMask;
 
     public Transform player;
-    public float navSampleMaxDistance = 3f;
+    public float navSampleMaxDistance = 6f;
     public ArtifactType[] artifacts = new ArtifactType[6];
     public static readonly List<Transform> SpawnedArtifacts = new List<Transform>();
 
@@ -26,7 +26,7 @@ public class ArtifactSpawner : MonoBehaviour
         [Min(0f)] public float minSpacing = 3f;
     }
 
-    public int triesPerItem = 20;
+    public int triesPerItem = 50;
 
     void Start()
     {
