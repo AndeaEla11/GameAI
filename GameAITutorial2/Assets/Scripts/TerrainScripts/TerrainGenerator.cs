@@ -77,6 +77,7 @@ public class TerrainGenerator : MonoBehaviour
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.colors = colours; 
+
         mesh.RecalculateNormals();
 
         var col = GetComponent<MeshCollider>();
